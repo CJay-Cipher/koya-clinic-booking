@@ -12,18 +12,18 @@
    <alpha-value> opacity modifiers (e.g. bg-primary/10) work.
 ------------------------------------------------------------------------- */
 :root {
-  --color-paper: 251 248 242;        /* warm off-white page background */
-  --color-ink: 30 36 33;             /* near-black with a hint of green, body text */
-  --color-line: 221 212 196;         /* hairline dividers / borders */
+  --color-paper: 251 248 242; /* warm off-white page background */
+  --color-ink: 30 36 33; /* near-black with a hint of green, body text */
+  --color-line: 221 212 196; /* hairline dividers / borders */
 
-  --color-primary: 44 95 73;         /* deep botanical green -- brand, primary actions */
+  --color-primary: 44 95 73; /* deep botanical green -- brand, primary actions */
   --color-primary-dark: 27 66 50;
-  --color-primary-light: 224 234 228;/* pale green for subtle fills/badges */
+  --color-primary-light: 224 234 228; /* pale green for subtle fills/badges */
 
-  --color-accent: 201 138 43;        /* warm marigold -- the one bold accent, used sparingly */
+  --color-accent: 201 138 43; /* warm marigold -- the one bold accent, used sparingly */
   --color-accent-dark: 163 109 28;
 
-  --color-danger: 169 58 48;         /* muted brick red for errors */
+  --color-danger: 169 58 48; /* muted brick red for errors */
 }
 
 * {
@@ -38,8 +38,12 @@ body {
   margin: 0;
   background-color: rgb(var(--color-paper));
   color: rgb(var(--color-ink));
-  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: rgb(var(--color-primary) / 0.2);
 }
 
 /* Visible keyboard focus everywhere, styled to match the palette instead
@@ -50,7 +54,9 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;

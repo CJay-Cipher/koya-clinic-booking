@@ -138,7 +138,7 @@ function SlotForm({ initial, submitLabel, onSubmit, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} noValidate>
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-2 sm:gap-4 gap-3 sm:grid-cols-3">
         <Field
           className="col-span-2 sm:col-span-3"
           label="Provider"
@@ -182,7 +182,7 @@ function SlotRow({ slot, editing, onEdit, onCancelEdit, onSave, onAskDelete }) {
 
   if (editing) {
     return (
-      <li className="animate-fade-up bg-primary-light/30 p-4 first:rounded-t-2xl last:rounded-b-2xl sm:p-5">
+      <li className="relative z-20 animate-fade-up bg-primary-light/30 p-4 first:rounded-t-2xl last:rounded-b-2xl sm:p-5">
         <SlotForm initial={slot} submitLabel="Save changes" onSubmit={onSave} onCancel={onCancelEdit} />
       </li>
     );
@@ -346,7 +346,7 @@ export default function AdminPanel() {
       </div>
 
       {creating && (
-        <div className="mb-8 animate-fade-up rounded-2xl border border-line bg-white/70 p-5 shadow-soft">
+        <div className="relative z-20 mb-8 animate-fade-up rounded-2xl border border-line bg-white/70 p-5 shadow-soft">
           <h3 className="mb-4 font-serif text-lg text-ink">New slot</h3>
           <SlotForm submitLabel="Create slot" onSubmit={handleCreate} onCancel={() => setCreating(false)} />
         </div>

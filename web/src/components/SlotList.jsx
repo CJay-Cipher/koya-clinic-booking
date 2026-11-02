@@ -1,8 +1,30 @@
-import { useMemo, useState } from 'react';
-import { dayHeading, dayKey } from '../format.js';
-import BookingRow from './BookingRow.jsx';
+import { useMemo, useState } from "react";
+import { dayHeading, dayKey } from "../format.js";
+import BookingRow from "./BookingRow.jsx";
+import Select from "./Select.jsx";
+import Button from "./Button.jsx";
+import EmptyState from "./EmptyState.jsx";
+import { PageLoader } from "./Spinner.jsx";
+import { CalendarIcon, AlertIcon, UserIcon } from "./Icons.jsx";
 
-export default function SlotList({ slots, loading, error, providers, provider, onProviderChange, onBooked }) {
+function SlotSkeleton() {
+  return (
+    <div className="divide-y divide-line rounded-2xl border border-line bg-white/60" aria-hidden="true">
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="flex items-center gap-4 p-4">
+          <div className="h-10 w-10 animate-pulse rounded-full bg-ink/10" />
+          <div className="flex-1 space-y-2">
+            <div className="h-4 w-28 animate-pulse rounded bg-ink/10" />
+            <div className="h-3 w-36 animate-pulse rounded bg-ink/10" />
+          </div>
+          <div className="h-9 w-20 animate-pulse rounded-full bg-ink/10" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export default function SlotList({ slots, loading, error, providers, provider, onProviderChange, onBooked, onRetry }) {
   const [openSlotId, setOpenSlotId] = useState(null);
 
   const groups = useMemo(() => {
@@ -15,57 +37,86 @@ export default function SlotList({ slots, loading, error, providers, provider, o
     return [...map.values()];
   }, [slots]);
 
+  const providerOptions = [{ value: "", label: "All providers" }, ...providers.map((p) => ({ value: p, label: p }))];
+  const openCount = slots.filter((s) => s.available).length;
+
   return (
     <section>
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="font-serif text-2xl text-ink">Open appointments</h2>
-        <label className="text-sm text-ink/70">
-          <span className="mr-2">Provider</span>
-          <select
-            value={provider}
-            onChange={(e) => onProviderChange(e.target.value)}
-            className="rounded border border-line bg-paper px-2 py-1.5"
-          >
-            <option value="">All</option>
-            {providers.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-        </label>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="font-serif text-2xl text-ink">Open appointments</h2>
+          {!loading && !error && slots.length > 0 && <p className="mt-0.5 text-sm text-ink/55">{openCount} open</p>}
+        </div>
+        <Select
+          ariaLabel="Filter by provider"
+          icon={<UserIcon size={16} />}
+          value={provider}
+          onChange={onProviderChange}
+          options={providerOptions}
+          loading={loading}
+          align="right"
+          className="w-full sm:w-56"
+        />
       </div>
 
-      {loading && <p className="text-sm text-ink/60">Loading slots…</p>}
-      {error && (
-        <p className="rounded border border-danger/30 bg-danger/5 px-4 py-3 text-sm text-danger">
+      {loading && (
+        <>
+          <PageLoader label={provider ? `Finding slots for ${provider}…` : "Finding appointments…"} />
+          <SlotSkeleton />
+        </>
+      )}
+
+      {!loading && error && (
+        <EmptyState
+          tone="danger"
+          icon={<AlertIcon size={22} />}
+          title="Couldn't load appointments"
+          action={
+            <Button variant="outline" onClick={onRetry}>
+              Try again
+            </Button>
+          }
+        >
           {error}
-        </p>
-      )}
-      {!loading && !error && groups.length === 0 && (
-        <p className="rounded border border-dashed border-line px-4 py-6 text-center text-sm text-ink/60">
-          No appointments are open right now. Check back soon, or try a different provider.
-        </p>
+        </EmptyState>
       )}
 
-      <div className="space-y-8">
-        {groups.map((group) => (
-          <div key={group.heading}>
-            <h3 className="mb-2 font-serif text-lg italic text-primary-dark">{group.heading}</h3>
-            <ul>
-              {group.slots.map((slot) => (
-                <BookingRow
-                  key={slot.id}
-                  slot={slot}
-                  isOpen={openSlotId === slot.id}
-                  onToggle={() => setOpenSlotId(openSlotId === slot.id ? null : slot.id)}
-                  onBooked={onBooked}
-                />
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+      {!loading && !error && groups.length === 0 && (
+        <EmptyState
+          icon={<CalendarIcon size={22} />}
+          title={provider ? `No openings for ${provider}` : "No appointments yet"}
+          action={
+            provider ? (
+              <Button variant="outline" onClick={() => onProviderChange("")}>
+                Show all providers
+              </Button>
+            ) : null
+          }
+        >
+          {provider ? "Try another provider or view everyone's availability." : "There are no appointments open right now. Please check back soon."}
+        </EmptyState>
+      )}
+
+      {!loading && !error && groups.length > 0 && (
+        <div className="space-y-8">
+          {groups.map((group) => (
+            <div key={group.heading}>
+              <h3 className="mb-3 font-serif text-lg italic text-primary-dark">{group.heading}</h3>
+              <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white/60 shadow-soft">
+                {group.slots.map((slot) => (
+                  <BookingRow
+                    key={slot.id}
+                    slot={slot}
+                    isOpen={openSlotId === slot.id}
+                    onToggle={() => setOpenSlotId(openSlotId === slot.id ? null : slot.id)}
+                    onBooked={onBooked}
+                  />
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 }

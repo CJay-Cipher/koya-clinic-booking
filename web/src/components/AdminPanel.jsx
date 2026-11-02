@@ -8,6 +8,7 @@ import DatePicker from "./DatePicker.jsx";
 import EmptyState, { Alert } from "./EmptyState.jsx";
 import { PageLoader } from "./Spinner.jsx";
 import { CalendarIcon, AlertIcon, LockIcon, PlusIcon, PencilIcon, TrashIcon, UserIcon } from "./Icons.jsx";
+import ConfirmModal from "./ConfirmModal.jsx";
 
 const STORAGE_KEY = "koya_admin_key";
 const readKey = () => {
@@ -169,7 +170,7 @@ function SlotForm({ initial, submitLabel, onSubmit, onCancel }) {
 }
 
 // ---- One slot row ------------------------------------------------------------
-function SlotRow({ slot, editing, confirming, busy, onEdit, onCancelEdit, onSave, onAskDelete, onCancelDelete, onDelete }) {
+function SlotRow({ slot, editing, onEdit, onCancelEdit, onSave, onAskDelete }) {
   const past = new Date(slot.start).getTime() <= Date.now();
   const status = past ? "Past" : slot.available ? "Open" : "Booked";
   const chip = {
@@ -181,7 +182,7 @@ function SlotRow({ slot, editing, confirming, busy, onEdit, onCancelEdit, onSave
 
   if (editing) {
     return (
-      <li className="bg-primary-light/30 p-4 sm:p-5">
+      <li className="animate-fade-up bg-primary-light/30 p-4 first:rounded-t-2xl last:rounded-b-2xl sm:p-5">
         <SlotForm initial={slot} submitLabel="Save changes" onSubmit={onSave} onCancel={onCancelEdit} />
       </li>
     );
@@ -195,26 +196,12 @@ function SlotRow({ slot, editing, confirming, busy, onEdit, onCancelEdit, onSave
       </div>
       <div className="flex flex-wrap items-center gap-2 sm:justify-end">
         <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${chip}`}>{status}</span>
-        {confirming ? (
-          <>
-            <span className="text-sm text-ink/70">Delete this slot?</span>
-            <Button size="sm" variant="danger" loading={busy} loadingText="Deleting…" onClick={onDelete}>
-              Yes, delete
-            </Button>
-            <Button size="sm" variant="ghost" onClick={onCancelDelete} disabled={busy}>
-              No
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button size="sm" variant="ghost" onClick={onEdit} disabled={locked} title={locked ? "Has a confirmed booking" : "Edit slot"}>
-              <PencilIcon size={15} /> Edit
-            </Button>
-            <Button size="sm" variant="ghost" onClick={onAskDelete} disabled={locked} title={locked ? "Has a confirmed booking" : "Delete slot"}>
-              <TrashIcon size={15} /> Delete
-            </Button>
-          </>
-        )}
+        <Button size="sm" variant="ghost" onClick={onEdit} disabled={locked} title={locked ? "Has a confirmed booking" : "Edit slot"}>
+          <PencilIcon size={15} /> Edit
+        </Button>
+        <Button size="sm" variant="ghost" onClick={onAskDelete} disabled={locked} title={locked ? "Has a confirmed booking" : "Delete slot"}>
+          <TrashIcon size={15} /> Delete
+        </Button>
       </div>
     </li>
   );
@@ -229,7 +216,8 @@ export default function AdminPanel() {
   const [error, setError] = useState(null);
   const [creating, setCreating] = useState(false);
   const [editingId, setEditingId] = useState(null);
-  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [provider, setProvider] = useState("");
   const [busyId, setBusyId] = useState(null);
   const [actionError, setActionError] = useState(null);
 
@@ -250,15 +238,22 @@ export default function AdminPanel() {
     if (adminKey) load();
   }, [adminKey, load]);
 
+  const providers = useMemo(() => [...new Set(slots.map((s) => s.provider))].sort(), [slots]);
+  // If the chosen provider no longer has slots (e.g. the last one was deleted), fall back to all.
+  const activeProvider = providers.includes(provider) ? provider : "";
+  const providerOptions = [{ value: "", label: "All providers" }, ...providers.map((p) => ({ value: p, label: p }))];
+
   const groups = useMemo(() => {
     const map = new Map();
     for (const slot of slots) {
+      if (activeProvider && slot.provider !== activeProvider) continue;
       const key = dayKey(slot.start);
       if (!map.has(key)) map.set(key, { heading: dayHeading(slot.start), slots: [] });
       map.get(key).slots.push(slot);
     }
     return [...map.values()];
-  }, [slots]);
+  }, [slots, activeProvider]);
+  const visibleCount = groups.reduce((n, g) => n + g.slots.length, 0);
 
   function lock(message) {
     writeKey("");
@@ -266,7 +261,7 @@ export default function AdminPanel() {
     setGateMsg(message || null);
     setCreating(false);
     setEditingId(null);
-    setConfirmDeleteId(null);
+    setDeleteTarget(null);
   }
   function unlock(key) {
     writeKey(key);
@@ -303,18 +298,21 @@ export default function AdminPanel() {
     });
   }
 
-  async function handleDelete(slot) {
-    setBusyId(slot.id);
+  async function handleDelete() {
+    if (!deleteTarget) return;
+    setBusyId(deleteTarget.id);
     setActionError(null);
     try {
       await run(async () => {
-        await api.deleteSlot(adminKey, slot.id);
-        setConfirmDeleteId(null);
+        await api.deleteSlot(adminKey, deleteTarget.id);
+        setDeleteTarget(null);
         await load({ silent: true });
       });
     } catch (err) {
+      // Error stays visible inside the modal; refresh so the row reflects reality
+      // (e.g. the slot was booked a moment ago).
       setActionError(err.message || "Could not delete this slot.");
-      setConfirmDeleteId(null);
+      load({ silent: true });
     } finally {
       setBusyId(null);
     }
@@ -354,9 +352,21 @@ export default function AdminPanel() {
         </div>
       )}
 
-      {actionError && (
-        <div className="mb-6">
-          <Alert onClose={() => setActionError(null)}>{actionError}</Alert>
+      {!loading && !error && slots.length > 0 && (
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-ink/55">
+            {visibleCount} {visibleCount === 1 ? "slot" : "slots"}
+            {activeProvider ? ` for ${activeProvider}` : ""}
+          </p>
+          <Select
+            ariaLabel="Filter by provider"
+            icon={<UserIcon size={16} />}
+            value={activeProvider}
+            onChange={setProvider}
+            options={providerOptions}
+            align="right"
+            className="w-full sm:w-56"
+          />
         </div>
       )}
 
@@ -387,7 +397,7 @@ export default function AdminPanel() {
         <div className="space-y-8">
           {groups.map((group) => (
             <div key={group.heading}>
-              <h3 className="mb-3 font-serif text-lg italic text-primary-dark">{group.heading}</h3>
+              <h3 className="sm:mb-2 mb-1 font-serif text-lg italic text-primary-dark">{group.heading}</h3>
               {/* No overflow-hidden here: the edit form's dropdowns must not be clipped. */}
               <ul className="divide-y divide-line rounded-2xl border border-line bg-white/60 shadow-soft">
                 {group.slots.map((slot) => (
@@ -395,18 +405,16 @@ export default function AdminPanel() {
                     key={slot.id}
                     slot={slot}
                     editing={editingId === slot.id}
-                    confirming={confirmDeleteId === slot.id}
-                    busy={busyId === slot.id}
                     onEdit={() => {
                       setEditingId(slot.id);
                       setCreating(false);
-                      setConfirmDeleteId(null);
                     }}
                     onCancelEdit={() => setEditingId(null)}
                     onSave={(payload) => handleUpdate(slot.id, payload)}
-                    onAskDelete={() => setConfirmDeleteId(slot.id)}
-                    onCancelDelete={() => setConfirmDeleteId(null)}
-                    onDelete={() => handleDelete(slot)}
+                    onAskDelete={() => {
+                      setActionError(null);
+                      setDeleteTarget(slot);
+                    }}
                   />
                 ))}
               </ul>
@@ -414,6 +422,28 @@ export default function AdminPanel() {
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        open={Boolean(deleteTarget)}
+        title="Delete this slot?"
+        confirmLabel="Delete slot"
+        loadingLabel="Deleting…"
+        loading={busyId !== null}
+        error={actionError}
+        onConfirm={handleDelete}
+        onCancel={() => {
+          setDeleteTarget(null);
+          setActionError(null);
+        }}
+      >
+        {deleteTarget && (
+          <>
+            <span className="font-medium text-ink">{deleteTarget.provider}</span>
+            {" · "}
+            {dayHeading(deleteTarget.start)}, {timeRange(deleteTarget.start, deleteTarget.end)} will be removed permanently, and patients will no longer see it.
+          </>
+        )}
+      </ConfirmModal>
     </section>
   );
 }

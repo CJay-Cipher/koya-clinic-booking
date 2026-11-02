@@ -12,6 +12,7 @@ module.exports = {
     },
     extend: {
       colors: {
+        bg: "rgb(var(--color-bg) / <alpha-value>)",
         paper: "rgb(var(--color-paper) / <alpha-value>)",
         ink: "rgb(var(--color-ink) / <alpha-value>)",
         line: "rgb(var(--color-line) / <alpha-value>)",

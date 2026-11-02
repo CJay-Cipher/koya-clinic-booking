@@ -83,14 +83,14 @@ export default function App() {
   }
 
   return (
-    <div className="relative isolate min-h-screen">
+    <div className="relative isolate flex min-h-screen flex-col">
       <div
         className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-80 bg-[radial-gradient(60%_60%_at_50%_0%,rgb(var(--color-primary)/0.09),transparent)]"
         aria-hidden="true"
       />
       <Header view={view} onNavigate={navigate} />
 
-      <main className="mx-auto max-w-3xl px-5 py-10">
+      <main className="mx-auto w-full max-w-3xl flex-1 px-5 py-10">
         <div key={view} className="animate-fade-up">
           {view === "book" && (
             <>
@@ -134,7 +134,7 @@ export default function App() {
         </div>
       </main>
 
-      <footer className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-2 px-5 pb-10 text-sm text-ink/40">
+      <footer className="mx-auto mt-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-2 px-5 pb-10 text-sm text-ink/40">
         <span>Koya Clinic — appointments booked here are confirmed right away.</span>
         <a
           href="/admin"

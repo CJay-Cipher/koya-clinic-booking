@@ -14,10 +14,10 @@ export default function Header({ view, onNavigate }) {
   return (
     <header className="sticky top-0 z-20 border-b border-line/70 bg-paper/80 backdrop-blur">
       <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-5 py-3.5">
-        <button onClick={() => onNavigate("book")} className="flex items-center gap-2.5" aria-label="Koya Clinic home">
-          <img src="/koya-logo.webp" alt="Koya" className="h-6 w-auto" />
+        <button onClick={() => onNavigate("book")} className="flex justify-center items-center gap-2.5" aria-label="Koya Clinic home">
+          <img src="/koya-logo.webp" alt="Koya" className="sm:h-6 h-4 w-auto" />
           <span className="hidden h-5 w-px bg-line xs:block" aria-hidden="true" />
-          <span className="font-serif text-xl tracking-tight text-primary-dark">Clinic</span>
+          <span className="mt-0.5 font-serif sm:text-xl text-base tracking-tight text-primary-dark">Clinic</span>
         </button>
         <nav className="flex items-center gap-1">
           <NavButton active={view === "book"} onClick={() => onNavigate("book")}>

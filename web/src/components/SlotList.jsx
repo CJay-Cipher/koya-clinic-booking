@@ -101,7 +101,7 @@ export default function SlotList({ slots, loading, error, providers, provider, o
         <div className="space-y-8">
           {groups.map((group) => (
             <div key={group.heading}>
-              <h3 className="mb-3 font-serif text-lg italic text-primary-dark">{group.heading}</h3>
+              <h3 className="sm:mb-2 mb-1 font-serif text-lg italic text-primary-dark">{group.heading}</h3>
               <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white/60 shadow-soft">
                 {group.slots.map((slot) => (
                   <BookingRow

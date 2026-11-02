@@ -1,7 +1,9 @@
 {
   "rewrites": [
+    { "source": "/admin", "destination": "/index.html" },
     { "source": "/reset", "destination": "/api/reset" },
     { "source": "/slots", "destination": "/api/slots" },
+    { "source": "/slots/:id", "destination": "/api/slots?id=:id" },
     { "source": "/bookings", "destination": "/api/bookings" },
     { "source": "/bookings/:id", "destination": "/api/bookings/:id" }
   ]

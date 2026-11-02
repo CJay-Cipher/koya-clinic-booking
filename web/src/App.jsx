@@ -143,7 +143,7 @@ export default function App() {
             e.preventDefault();
             navigate("admin");
           }}
-          className="transition hover:text-primary-dark"
+          className="transition text-primary hover:text-primary-dark"
         >
           Staff login
         </a>

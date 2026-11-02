@@ -150,6 +150,7 @@ uses a separate `ADMIN_KEY` that is never shipped to the browser build.
 - **Short references**: new bookings get ids like `bk_k7m2x9qpa4`. Older long ids are shown
   shortened with click-to-copy; lookup still uses the full id.
 - **Responsive**: breakpoints are `xs` 480px, `sm` 640px and up. Rows stack on small screens.
+- **Staff page**: filter slots by provider, animated edit card, and a confirm modal before deleting a slot.
 
 ## Design
 

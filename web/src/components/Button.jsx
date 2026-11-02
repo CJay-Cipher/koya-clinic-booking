@@ -4,8 +4,9 @@ const variants = {
   primary: "bg-primary text-paper hover:bg-primary-dark shadow-sm",
   accent: "bg-accent text-white hover:bg-accent-dark shadow-sm",
   outline: "border border-primary/40 text-primary-dark hover:border-primary hover:bg-primary hover:text-paper",
-  ghost: "text-ink/70 hover:bg-ink/5 hover:text-ink",
+  ghost: "bg-ink/5 text-ink/70 hover:bg-ink/15 hover:text-ink",
   danger: "border border-danger/40 text-danger hover:border-danger hover:bg-danger hover:text-white",
+  solidDanger: "bg-danger text-white hover:bg-danger/90 shadow-sm",
   light: "border border-paper/40 text-paper hover:bg-paper hover:text-primary-dark",
 };
 const sizes = { sm: "h-9 px-4 text-sm", md: "h-11 px-6 text-sm" };

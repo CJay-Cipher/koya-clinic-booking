@@ -151,6 +151,11 @@ uses a separate `ADMIN_KEY` that is never shipped to the browser build.
   shortened with click-to-copy; lookup still uses the full id.
 - **Responsive**: breakpoints are `xs` 480px, `sm` 640px and up. Rows stack on small screens.
 - **Staff page**: filter slots by provider, animated edit card, and a confirm modal before deleting a slot.
+- **Cancelling a booking**: patients can cancel from the confirmation ticket or, later, from the
+  "Find a booking" page (by email or by reference), with a confirm modal first. It uses the
+  existing `DELETE /bookings/{id}` endpoint, so there are no API changes.
+- **Booking cards**: lookup results are ticket-style cards showing the provider and appointment
+  time (matched from the public slot list), the reference with click-to-copy, and status.
 
 ## Design
 

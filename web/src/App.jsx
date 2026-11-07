@@ -82,6 +82,12 @@ export default function App() {
     loadSlots(provider, { silent: true });
   }
 
+  // Cancelled from the Find a booking page: keep the ticket and slot list in sync.
+  function handleLookupCancelled(updated) {
+    setConfirmation((prev) => (prev && prev.booking.id === updated.id ? { ...prev, booking: updated } : prev));
+    loadSlots(provider, { silent: true });
+  }
+
   return (
     <div className="relative isolate flex min-h-screen flex-col">
       <div
@@ -129,7 +135,7 @@ export default function App() {
               />
             </>
           )}
-          {view === "lookup" && <BookingLookup />}
+          {view === "lookup" && <BookingLookup onCancelled={handleLookupCancelled} />}
           {view === "admin" && <AdminPanel />}
         </div>
       </main>

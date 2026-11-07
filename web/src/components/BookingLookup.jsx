@@ -1,14 +1,80 @@
 import { useState } from "react";
 import { api } from "../api.js";
-import { fullTimestamp, isEmail } from "../format.js";
+import { fullTimestamp, isEmail, shortRef } from "../format.js";
 import Button from "./Button.jsx";
 import Field from "./Field.jsx";
 import RefChip from "./RefChip.jsx";
+import ConfirmModal from "./ConfirmModal.jsx";
 import EmptyState, { Alert } from "./EmptyState.jsx";
 import { PageLoader } from "./Spinner.jsx";
 import { MailIcon, SearchIcon, HashIcon, CalendarIcon } from "./Icons.jsx";
 
 const LIST = "divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white/60 shadow-soft";
+
+// Shared cancel flow for both tabs: pick a booking, confirm in a modal, call the API.
+function useCancel(onDone) {
+  const [target, setTarget] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
+
+  async function confirm() {
+    setBusy(true);
+    setError(null);
+    try {
+      const updated = await api.cancelBooking(target.id);
+      onDone(updated);
+      setTarget(null);
+    } catch (err) {
+      if (err.status === 409) {
+        // Already cancelled elsewhere: just show it as cancelled.
+        onDone({ ...target, status: "cancelled" });
+        setTarget(null);
+      } else if (err.status === 404) {
+        setError("This booking no longer exists.");
+      } else {
+        setError(err.message || "Could not cancel this booking.");
+      }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function close() {
+    if (busy) return;
+    setTarget(null);
+    setError(null);
+  }
+
+  function ask(booking) {
+    setError(null);
+    setTarget(booking);
+  }
+
+  return { target, busy, error, ask, confirm, close };
+}
+
+function CancelModal({ cancel }) {
+  return (
+    <ConfirmModal
+      open={Boolean(cancel.target)}
+      title="Cancel this appointment?"
+      confirmLabel="Yes, cancel booking"
+      loadingLabel="Cancelling…"
+      cancelLabel="Keep booking"
+      loading={cancel.busy}
+      error={cancel.error}
+      onConfirm={cancel.confirm}
+      onCancel={cancel.close}
+    >
+      {cancel.target && (
+        <>
+          Booking <span className="font-mono text-ink">{shortRef(cancel.target.id)}</span> for <span className="font-medium text-ink">{cancel.target.name}</span> will be
+          cancelled and the slot will be open to other patients. This can't be undone.
+        </>
+      )}
+    </ConfirmModal>
+  );
+}
 
 function Tabs({ value, onChange }) {
   const tabs = [
@@ -46,28 +112,38 @@ function StatusBadge({ status }) {
   );
 }
 
-function BookingCard({ booking }) {
+function BookingCard({ booking, onCancel }) {
   return (
     <li className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 p-4">
       <div className="min-w-0">
         <p className="truncate font-medium text-ink">{booking.name}</p>
-        <p className="mt-0.5 text-sm text-ink/55">Booked {fullTimestamp(booking.created_at)}</p>
+        <p className="mt-0.5 text-sm text-ink/55">Booked sdfs {fullTimestamp(booking.created_at)}</p>
       </div>
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <RefChip id={booking.id} />
         <StatusBadge status={booking.status} />
+        {booking.status === "confirmed" && (
+          <Button size="sm" variant="danger" onClick={() => onCancel(booking)}>
+            Cancel
+          </Button>
+        )}
       </div>
     </li>
   );
 }
 
-function ByIdPanel() {
+function ByIdPanel({ onCancelled }) {
   const [id, setId] = useState("");
   const [idError, setIdError] = useState(null);
   const [result, setResult] = useState(null);
   const [notFound, setNotFound] = useState(false);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
+
+  const cancel = useCancel((updated) => {
+    setResult(updated);
+    if (onCancelled) onCancelled(updated);
+  });
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -117,15 +193,17 @@ function ByIdPanel() {
         )}
         {result && !loading && (
           <ul className={LIST}>
-            <BookingCard booking={result} />
+            <BookingCard booking={result} onCancel={cancel.ask} />
           </ul>
         )}
       </div>
+
+      <CancelModal cancel={cancel} />
     </div>
   );
 }
 
-function ByEmailPanel() {
+function ByEmailPanel({ onCancelled }) {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState(null);
   const [searchedEmail, setSearchedEmail] = useState("");
@@ -135,6 +213,11 @@ function ByEmailPanel() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [moreLoading, setMoreLoading] = useState(false);
+
+  const cancel = useCancel((updated) => {
+    setBookings((prev) => prev.map((b) => (b.id === updated.id ? updated : b)));
+    if (onCancelled) onCancelled(updated);
+  });
 
   async function search(e) {
     e.preventDefault();
@@ -198,7 +281,7 @@ function ByEmailPanel() {
 
         {!searched && (
           <EmptyState icon={<CalendarIcon size={22} />} title="Find your appointments">
-            Enter the email you booked with to see all of your bookings.
+            Enter the email you booked with to see, and cancel, your bookings.
           </EmptyState>
         )}
 
@@ -212,7 +295,7 @@ function ByEmailPanel() {
           <>
             <ul className={LIST}>
               {bookings.map((b) => (
-                <BookingCard key={b.id} booking={b} />
+                <BookingCard key={b.id} booking={b} onCancel={cancel.ask} />
               ))}
             </ul>
             {cursor && (
@@ -225,21 +308,23 @@ function ByEmailPanel() {
           </>
         )}
       </div>
+
+      <CancelModal cancel={cancel} />
     </div>
   );
 }
 
-export default function BookingLookup() {
+export default function BookingLookup({ onCancelled }) {
   const [tab, setTab] = useState("email");
 
   return (
     <section className="pb-16">
       <h2 className="font-serif text-3xl text-ink">Find a booking</h2>
-      <p className="mt-1.5 text-ink/60">Look up an appointment by your email or booking reference.</p>
+      <p className="mt-1.5 text-ink/60">Look up an appointment by your email or booking reference. You can cancel it from here too.</p>
       <div className="mt-5">
         <Tabs value={tab} onChange={setTab} />
       </div>
-      {tab === "email" ? <ByEmailPanel /> : <ByIdPanel />}
+      {tab === "email" ? <ByEmailPanel onCancelled={onCancelled} /> : <ByIdPanel onCancelled={onCancelled} />}
     </section>
   );
 }

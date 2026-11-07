@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api } from "../api.js";
-import { fullTimestamp, isEmail, shortRef } from "../format.js";
+import { fullTimestamp, initials, isEmail, shortRef } from "../format.js";
 import Button from "./Button.jsx";
 import Field from "./Field.jsx";
 import RefChip from "./RefChip.jsx";
@@ -8,8 +8,6 @@ import ConfirmModal from "./ConfirmModal.jsx";
 import EmptyState, { Alert } from "./EmptyState.jsx";
 import { PageLoader } from "./Spinner.jsx";
 import { MailIcon, SearchIcon, HashIcon, CalendarIcon } from "./Icons.jsx";
-
-const LIST = "divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white/60 shadow-soft";
 
 // Shared cancel flow for both tabs: pick a booking, confirm in a modal, call the API.
 function useCancel(onDone) {
@@ -112,19 +110,49 @@ function StatusBadge({ status }) {
   );
 }
 
-function BookingCard({ booking, onCancel }) {
+function BookingCard({ booking, slot, onCancel }) {
+  const cancelled = booking.status === "cancelled";
   return (
-    <li className="flex flex-wrap items-center justify-between gap-x-4 gap-y-3 p-4">
-      <div className="min-w-0">
-        <p className="truncate font-medium text-ink">{booking.name}</p>
-        <p className="mt-0.5 text-sm text-ink/55">Booked sdfs {fullTimestamp(booking.created_at)}</p>
-      </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <RefChip id={booking.id} />
+    <li className={`overflow-hidden rounded-2xl border bg-white shadow-soft ${cancelled ? "border-line/70 opacity-80" : "border-line"}`}>
+      <div className="flex items-start justify-between gap-4 p-5">
+        <div className="flex min-w-0 items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-light text-xs font-semibold text-primary-dark">
+            {slot ? initials(slot.provider) : "•"}
+          </div>
+          <div className="min-w-0">
+            <h3 className="truncate font-serif text-xl text-ink">{slot ? slot.provider : "Appointment"}</h3>
+            {slot && <p className="mt-0.5 text-sm text-ink/65">{fullTimestamp(slot.start)}</p>}
+          </div>
+        </div>
         <StatusBadge status={booking.status} />
-        {booking.status === "confirmed" && (
+      </div>
+
+      {/* Tear line, like the perforation on a paper appointment slip */}
+      <div className="relative border-t border-dashed border-line">
+        <span className="absolute -left-2 -top-2 h-4 w-4 rounded-full bg-paper" aria-hidden="true" />
+        <span className="absolute -right-2 -top-2 h-4 w-4 rounded-full bg-paper" aria-hidden="true" />
+      </div>
+
+      <div className="flex flex-wrap items-center justify-between gap-4 p-5 pt-4">
+        <dl className="flex flex-wrap items-center gap-x-8 gap-y-3 text-sm">
+          <div>
+            <dt className="text-ink/50">Booked for</dt>
+            <dd className="text-ink">{booking.name}</dd>
+          </div>
+          <div>
+            <dt className="mb-0.5 text-ink/50">Reference</dt>
+            <dd>
+              <RefChip id={booking.id} />
+            </dd>
+          </div>
+          <div>
+            <dt className="text-ink/50">Booked on</dt>
+            <dd className="text-ink">{fullTimestamp(booking.created_at)}</dd>
+          </div>
+        </dl>
+        {!cancelled && (
           <Button size="sm" variant="danger" onClick={() => onCancel(booking)}>
-            Cancel
+            Cancel booking
           </Button>
         )}
       </div>
@@ -132,7 +160,7 @@ function BookingCard({ booking, onCancel }) {
   );
 }
 
-function ByIdPanel({ onCancelled }) {
+function ByIdPanel({ onCancelled, slotsById }) {
   const [id, setId] = useState("");
   const [idError, setIdError] = useState(null);
   const [result, setResult] = useState(null);
@@ -192,8 +220,8 @@ function ByIdPanel({ onCancelled }) {
           </EmptyState>
         )}
         {result && !loading && (
-          <ul className={LIST}>
-            <BookingCard booking={result} onCancel={cancel.ask} />
+          <ul className="space-y-4">
+            <BookingCard booking={result} slot={slotsById[result.slot_id]} onCancel={cancel.ask} />
           </ul>
         )}
       </div>
@@ -203,7 +231,7 @@ function ByIdPanel({ onCancelled }) {
   );
 }
 
-function ByEmailPanel({ onCancelled }) {
+function ByEmailPanel({ onCancelled, slotsById }) {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState(null);
   const [searchedEmail, setSearchedEmail] = useState("");
@@ -293,9 +321,9 @@ function ByEmailPanel({ onCancelled }) {
 
         {bookings.length > 0 && (
           <>
-            <ul className={LIST}>
+            <ul className="space-y-4">
               {bookings.map((b) => (
-                <BookingCard key={b.id} booking={b} onCancel={cancel.ask} />
+                <BookingCard key={b.id} booking={b} slot={slotsById[b.slot_id]} onCancel={cancel.ask} />
               ))}
             </ul>
             {cursor && (
@@ -316,6 +344,22 @@ function ByEmailPanel({ onCancelled }) {
 
 export default function BookingLookup({ onCancelled }) {
   const [tab, setTab] = useState("email");
+  const [slotsById, setSlotsById] = useState({});
+
+  // Load slots once so each booking can show its provider and appointment time.
+  // If this fails, cards simply fall back to a plain "Appointment" title.
+  useEffect(() => {
+    let cancelled = false;
+    api
+      .listSlots()
+      .then((data) => {
+        if (!cancelled) setSlotsById(Object.fromEntries(data.slots.map((s) => [s.id, s])));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   return (
     <section className="pb-16">
@@ -324,7 +368,7 @@ export default function BookingLookup({ onCancelled }) {
       <div className="mt-5">
         <Tabs value={tab} onChange={setTab} />
       </div>
-      {tab === "email" ? <ByEmailPanel onCancelled={onCancelled} /> : <ByIdPanel onCancelled={onCancelled} />}
+      {tab === "email" ? <ByEmailPanel onCancelled={onCancelled} slotsById={slotsById} /> : <ByIdPanel onCancelled={onCancelled} slotsById={slotsById} />}
     </section>
   );
 }

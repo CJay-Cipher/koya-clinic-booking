@@ -13,8 +13,8 @@ function NavButton({ active, onClick, children }) {
 export default function Header({ view, onNavigate }) {
   return (
     <header className="sticky top-0 z-20 border-b border-line/70 bg-paper/80 backdrop-blur">
-      <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 px-5 py-3.5">
-        <button onClick={() => onNavigate("book")} className="flex justify-center items-center gap-2.5" aria-label="Koya Clinic home">
+      <div className="mx-auto flex max-w-3xl items-center justify-between gap-3 sm:px-5 xs:px-4 px-[14px] py-3.5">
+        <button onClick={() => onNavigate("book")} className="flex justify-center items-center xs:gap-2.5 gap-1.5" aria-label="Koya Clinic home">
           <img src="/koya-logo.webp" alt="Koya" className="sm:h-6 h-4 w-auto" />
           <span className="hidden h-5 w-px bg-line xs:block" aria-hidden="true" />
           <span className="mt-0.5 font-serif sm:text-xl text-base tracking-tight text-primary-dark">Clinic</span>

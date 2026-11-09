@@ -58,7 +58,7 @@ export default function SlotList({ slots, loading, error, providers, provider, o
     <section>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="font-serif text-2xl text-ink">Open appointments</h2>
+          <h2 className="font-serif text-xl sm:text-2xl text-ink">Open appointments</h2>
           {!loading && !error && upcoming.length > 0 && <p className="mt-0.5 text-sm text-ink/55">{openCount} open</p>}
         </div>
         <Select

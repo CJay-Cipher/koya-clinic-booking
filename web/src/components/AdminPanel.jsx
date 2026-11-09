@@ -321,11 +321,11 @@ export default function AdminPanel() {
   if (!adminKey) return <AdminGate onUnlock={unlock} message={gateMsg} />;
 
   return (
-    <section className="pb-16">
+    <section className="sm:pb-16 pb-12">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="font-serif text-3xl text-ink">Manage slots</h2>
-          <p className="mt-1.5 text-ink/60">Add, edit or remove appointment slots. Booked slots are locked.</p>
+          <h2 className="font-serif text-2xl sm:text-4xl text-ink">Manage slots</h2>
+          <p className="mt-1.5 sm:text-lg text-[14px] text-ink/60">Add, edit or remove appointment slots. Booked slots are locked.</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={() => lock()}>

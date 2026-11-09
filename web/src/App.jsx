@@ -97,17 +97,17 @@ export default function App() {
       />
       <Header view={view} onNavigate={navigate} />
 
-      <main className="mx-auto w-full max-w-3xl flex-1 px-5 py-10">
+      <main className="mx-auto w-full max-w-3xl flex-1 sm:px-5 xs:px-4 px-[14px] sm:py-10 py-6">
         <div key={view} className="animate-fade-up">
           {view === "book" && (
             <>
-              <div className="mb-10">
+              <div className="sm:mb-10 mb-8">
                 <span className="inline-flex items-center gap-2 rounded-full bg-primary-light px-3 py-1 text-xs font-medium text-primary-dark">
                   <span className="h-1.5 w-1.5 rounded-full bg-accent" />
                   Confirmed instantly
                 </span>
-                <h1 className="mt-4 font-serif text-4xl leading-tight text-ink sm:text-5xl">Book your appointment</h1>
-                <p className="mt-3 max-w-md text-lg text-ink/65">
+                <h1 className="mt-4 font-serif text-2xl sm:text-5xl leading-tight text-ink">Book your appointment</h1>
+                <p className="sm:mt-3 mt-1.5 max-w-md sm:text-lg text-[14px] text-ink/65">
                   Pick an open slot below and confirm with your name and email. You'll get a booking reference right away.
                 </p>
               </div>
@@ -141,7 +141,7 @@ export default function App() {
         </div>
       </main>
 
-      <footer className="mx-auto mt-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-2 px-5 pb-10 text-sm text-ink/40">
+      <footer className="mx-auto mt-auto flex w-full max-w-3xl flex-wrap items-center justify-between gap-2 sm:px-5 xs:px-4 px-[14px] pb-10 text-sm text-ink/40">
         <span>Koya Clinic — appointments booked here are confirmed right away.</span>
         <a
           href="/admin"

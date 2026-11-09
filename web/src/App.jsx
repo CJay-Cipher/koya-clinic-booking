@@ -29,7 +29,8 @@ export default function App() {
       const data = await api.listSlots(providerFilter || undefined);
       if (id !== requestId.current) return; // a newer request superseded this one
       setSlots(data.slots);
-      const names = data.slots.map((s) => s.provider);
+      // Only providers that still have upcoming slots belong in the filter.
+      const names = data.slots.filter((s) => new Date(s.start).getTime() > Date.now()).map((s) => s.provider);
       // The provider list must not shrink when a filter is applied.
       setProviders((prev) => (providerFilter ? [...new Set([...prev, ...names])].sort() : [...new Set(names)].sort()));
     } catch (err) {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { dayHeading, dayKey } from "../format.js";
 import BookingRow from "./BookingRow.jsx";
 import Select from "./Select.jsx";
@@ -24,28 +24,42 @@ function SlotSkeleton() {
   );
 }
 
+// Re-renders every 30s so slots drop off the list when their start time passes.
+function useNow(intervalMs = 30000) {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const t = setInterval(() => setNow(Date.now()), intervalMs);
+    return () => clearInterval(t);
+  }, [intervalMs]);
+  return now;
+}
+
 export default function SlotList({ slots, loading, error, providers, provider, onProviderChange, onBooked, onRetry }) {
   const [openSlotId, setOpenSlotId] = useState(null);
 
+  const now = useNow();
+  // Slots that have already started can't be booked, so they aren't shown.
+  const upcoming = useMemo(() => slots.filter((s) => new Date(s.start).getTime() > now), [slots, now]);
+
   const groups = useMemo(() => {
     const map = new Map();
-    for (const slot of slots) {
+    for (const slot of upcoming) {
       const key = dayKey(slot.start);
       if (!map.has(key)) map.set(key, { heading: dayHeading(slot.start), slots: [] });
       map.get(key).slots.push(slot);
     }
     return [...map.values()];
-  }, [slots]);
+  }, [upcoming]);
 
   const providerOptions = [{ value: "", label: "All providers" }, ...providers.map((p) => ({ value: p, label: p }))];
-  const openCount = slots.filter((s) => s.available).length;
+  const openCount = upcoming.filter((s) => s.available).length;
 
   return (
     <section>
       <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 className="font-serif text-2xl text-ink">Open appointments</h2>
-          {!loading && !error && slots.length > 0 && <p className="mt-0.5 text-sm text-ink/55">{openCount} open</p>}
+          {!loading && !error && upcoming.length > 0 && <p className="mt-0.5 text-sm text-ink/55">{openCount} open</p>}
         </div>
         <Select
           ariaLabel="Filter by provider"

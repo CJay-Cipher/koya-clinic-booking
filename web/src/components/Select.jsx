@@ -123,8 +123,8 @@ export default function Select({
         disabled={disabled}
         onClick={() => (open ? setOpen(false) : openList())}
         onKeyDown={onKeyDown}
-        className={`flex h-11 w-full items-center gap-2 rounded-xl border bg-white/70 px-3.5 text-left text-[15px] shadow-sm transition hover:border-primary/40 focus:outline-none focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60 ${
-          open ? "border-primary ring-4 ring-primary/10" : "border-line"
+        className={`flex h-11 w-full items-center gap-2 rounded-xl border bg-primary-light/70 px-3.5 text-left text-[15px] shadow-sm transition hover:border-primary/40 focus:outline-none focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10 disabled:cursor-not-allowed disabled:opacity-60 ${
+          open ? "border-primary ring-4 ring-primary/10" : "border-primary/70"
         }`}
       >
         {icon && <span className="text-ink/45">{icon}</span>}

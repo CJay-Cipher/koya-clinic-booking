@@ -363,8 +363,8 @@ export default function BookingLookup({ onCancelled }) {
 
   return (
     <section className="pb-16">
-      <h2 className="font-serif text-3xl text-ink">Find a booking</h2>
-      <p className="mt-1.5 text-ink/60">Look up an appointment by your email or booking reference. You can cancel it from here too.</p>
+      <h2 className="font-serif text-2xl sm:text-4xl text-ink">Find a booking</h2>
+      <p className="mt-1.5 sm:text-base text-[14px] text-ink/60">Look up an appointment by your email or booking reference. You can cancel it from here too.</p>
       <div className="mt-5">
         <Tabs value={tab} onChange={setTab} />
       </div>
